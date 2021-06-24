@@ -26,7 +26,12 @@ queue_t *q_new()
 {
     queue_t *q =  malloc(sizeof(queue_t));
     /* What if malloc returned NULL? */
+    if (q == NULL) {
+      return NULL;
+    }
     q->head = NULL;
+    q->tail = q->head;
+    q->size = 0;
     return q;
 }
 
@@ -35,6 +40,16 @@ void q_free(queue_t *q)
 {
     /* How about freeing the list elements and the strings? */
     /* Free queue structure */
+    if (q == NULL) {
+      return;
+    }
+    list_ele_t* curr = q->head;
+    while (curr != NULL) {
+        list_ele_t* next = curr->next;
+        free(curr->value);
+        free(curr);
+        curr = next;
+    }
     free(q);
 }
 
@@ -46,14 +61,42 @@ void q_free(queue_t *q)
   The function must explicitly allocate space and copy the string into it.
  */
 bool q_insert_head(queue_t *q, char *s)
-{
-    list_ele_t *newh;
+{ 
     /* What should you do if the q is NULL? */
+    if (q == NULL) {
+        return false;
+    }
+
+    list_ele_t *newh;
+
     newh = malloc(sizeof(list_ele_t));
+
+    if (newh == NULL) {
+        return false;
+    }
+
     /* Don't forget to allocate space for the string and copy it */
     /* What if either call to malloc returns NULL? */
+
+    char* copied;
+    int num_chars = strlen(s) + 1;
+    copied = (char*) malloc(num_chars * sizeof(char));
+
+    if (copied == NULL) {
+        free(newh);
+        return false;
+    }
+
+    memset(copied, '\0', num_chars);
+    strcpy(copied, s);
+    newh->value = copied;
     newh->next = q->head;
     q->head = newh;
+
+    if (q->tail == NULL) {
+        q->tail = newh;
+    }
+    q->size++;
     return true;
 }
 
@@ -69,7 +112,38 @@ bool q_insert_tail(queue_t *q, char *s)
 {
     /* You need to write the complete code for this function */
     /* Remember: It should operate in O(1) time */
-    return false;
+    if (q == NULL) {
+      return false;
+    }
+
+    list_ele_t *newh;
+    newh = malloc(sizeof(list_ele_t));
+
+    if (newh == NULL) {
+      return false;
+    }
+
+    char* copied;
+    int num_chars = strlen(s) + 1;
+    copied = (char*) malloc(num_chars * sizeof(char));
+    if (copied == NULL) {
+      free(newh);
+      return false;
+    }
+    memset(copied, '\0', num_chars);
+    strcpy(copied, s);
+    newh->value = copied;
+    newh->next = NULL;
+    if (q->tail == NULL) {
+       q->tail = newh;
+       q->head = q->tail;
+    } else {
+      q->tail->next = newh;
+      q->tail = q->tail->next;
+    }
+    
+    q->size++;
+    return true;
 }
 
 /*
@@ -83,7 +157,36 @@ bool q_insert_tail(queue_t *q, char *s)
 bool q_remove_head(queue_t *q, char *sp, size_t bufsize)
 {
     /* You need to fix up this code. */
+    if (q == NULL || q->size == 0 || q->head == NULL || q->tail == NULL) {
+      return false;
+    }
+
+    if (sp != NULL) {
+      char *removed = q->head->value;
+      int num_copied = 0;
+      int num_chars = strlen(removed);
+
+      if (num_chars < bufsize - 1) {
+        num_copied = num_chars;
+      } else {
+        num_copied = bufsize - 1;
+      }
+
+      memset(sp, '\0', bufsize);
+      strncpy(sp, removed, num_copied);
+    }
+
+    list_ele_t* head = q->head;
+
+    if (q->tail == q->head) {
+      q->tail = q->head->next;
+    }
+
     q->head = q->head->next;
+
+    free(head->value);
+    free(head);
+    q->size--;
     return true;
 }
 
@@ -95,7 +198,10 @@ int q_size(queue_t *q)
 {
     /* You need to write the code for this function */
     /* Remember: It should operate in O(1) time */
-    return 0;
+    if (q == NULL) {
+      return 0;
+    }
+    return q->size;
 }
 
 /*
@@ -108,5 +214,19 @@ int q_size(queue_t *q)
 void q_reverse(queue_t *q)
 {
     /* You need to write the code for this function */
+    if (q == NULL || q->size == 0) {
+      return;
+    } 
+    list_ele_t* curr = q->head;
+    list_ele_t* old_head = q->head;
+    list_ele_t* prev = NULL;
+    while (curr != NULL) {
+      list_ele_t* next = curr->next;
+      curr->next = prev;
+      prev = curr;
+      curr = next;
+    }
+    q->head = prev;
+    q->tail = old_head;
 }
 
